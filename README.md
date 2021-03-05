@@ -1,10 +1,6 @@
-# PROJECT TITLE
+# Visual AI Data Prep
 
-TODO: Add a short description of the project.
-It should include the following:
-- What this repository is
-- Who is it for
-- What are the dependencies 
+Some tools to simplify and automate preparing data for Visual AI.
 
 ## Usage
 
@@ -30,12 +26,12 @@ If you'd like to report an issue or bug, suggest improvements, or contribute cod
 
 # Code of Conduct
 
-This project has adopted the Contributor Covenant for its Code of Conduct. 
+This project has adopted the Contributor Covenant for its Code of Conduct.
 See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) to read it in full.
 
 # License
 
-Licensed under the Apache License 2.0. 
+Licensed under the Apache License 2.0.
 See [LICENSE](LICENSE) to read it in full.
 
 
