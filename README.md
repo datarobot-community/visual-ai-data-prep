@@ -1,23 +1,25 @@
-# Visual AI Data Prep
+# Visual AI Data Preparation
 
-Some tools to simplify and automate preparing data for Visual AI.
+Some tools to simplify and automate preparing datasets for Visual AI.
+
+Main functions are:
+- Convert folder of images to base64 csv (useful for predictions)
+- Downscale images to the size used by DataRobot (useful for large datasets)
+- Download images by URLs
 
 ## Usage
 
-TODO: Specify how to use this project
-This can include running the scripts, or where to find API docs if it's a library, command line tool, or similar.
+Basic usage is:
 
-## Repository Contents
+    python visualai_data_prep.py <input.csv> <output.csv> <image_col>
 
-TODO: Specify what this repository contains, for example if it contains multiple self contained sub-projects, like with Notebooks scripts that can be used independently.
+For more details, refer to `visualai_data_prep.py`.
 
-In some cases you can skip this section.
 
 ## Setup/Installation
 
-TODO: Specify what's required to set this project up for usage
-
-In some cases you can skip this section.
+    pip install Pillow
+    pip install boto3
 
 ## Development and Contributing
 
