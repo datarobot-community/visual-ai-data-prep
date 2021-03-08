@@ -4,8 +4,6 @@ Guidelines for developing and contributing to this project.
 
 ## List of project maintainers
 
-//TODO: Update with your details
-
 - [Anton Kasyanov](https://github.com/mind1m)
 
 ## Opening new issues
