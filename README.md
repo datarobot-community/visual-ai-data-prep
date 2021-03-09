@@ -7,6 +7,8 @@ Main functions are:
 - Downscale images to the size used by DataRobot (useful for large datasets)
 - Download images by URLs
 
+You can find more details and examples in [this community post](https://community.datarobot.com/t5/resources/getting-predictions-for-visual-ai-projects-via-api-calls/ta-p/10864)
+
 ## Usage
 
 Basic usage is:
