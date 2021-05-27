@@ -22,7 +22,7 @@
             --image_dst_col : string, default = image-src-col
                               column name to create or use in the output csv file for the image file/base64 data
                               if the provided and differs to image_col
-            --resize        : string, default = 1124x1120
+            --resize        : string, default = 224x224 (this is what models use)
                               in the form of WIDTHxHEIGHT of the normalised image in the output
             --keep_aspect   : boolean, default = False
                               True, the image aspect is unchanged and is only resized to fit within the resize value
