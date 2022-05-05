@@ -14,7 +14,7 @@
                               in all other situations the output will be treated as a directory and images
                               will be saved into this folder and the resulting data csv will be named master.csv
                               in both cases the resulting output csv file will be written using
-                              record delimitered = newline,  field delim = ',' and with the quote = '"'
+                              record delimited = newline,  field delim = ',' and with the quote = '"'
             image_src_col   : string, required
                               column name containing either the url/path/base64 image information to use
 
@@ -22,11 +22,15 @@
             --image_dst_col : string, default = image-src-col
                               column name to create or use in the output csv file for the image file/base64 data
                               if the provided and differs to image_col
+            --image_format  : string, default will keep original format
+                              to what format image should be converted in preprocessing.
+                              Passing explicit value will force conversion to specified format
+                              i.e. JPEG, PNG or other supported format by pil library.
             --resize        : string, default = 224x224 (this is what models use)
-                              in the form of WIDTHxHEIGHT of the normalised image in the output
+                              in the form of WIDTHxHEIGHT of the normalised image in the output.
             --keep_aspect   : boolean, default = False
                               True, the image aspect is unchanged and is only resized to fit within the resize value
-                              Fasle, the image is resized to exactly the resize value
+                              False, the image is resized to exactly the resize value
             --threads       : integer, default = half of the SystemValue, range = 1-SystemValue
                               to enable faster image processing, multiple records can be done in parallel.
             --zip           : flag
@@ -50,7 +54,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 
 # global variables
-VERSION = 'Version 2.1 2020-11-30'
+VERSION = 'Version 2.2 2022-04-26'
 IMAGENET = 224
 SCALE = 1
 RESIZE=(int(IMAGENET*SCALE),int(IMAGENET*SCALE))
@@ -156,11 +160,22 @@ def get_image_from_bytes(bytes):
         log.error(e)
     return None
 
-def get_bytes_from_image(image):
+def get_image_save_kwargs(format):
+    save_args = {
+        'compression': 'None',
+        'quality': 'keep' if format == 'JPEG' else 75,
+        'format': format
+    }
+    # does pil support optimized saving
+    if format in {'JPEG', 'PNG'}:
+        save_args['optimize'] = True
+    return save_args
+
+def get_bytes_from_image(image, format):
     try:
         if image:
             bytes = BytesIO()
-            image.save(bytes, image.format)
+            image.save(bytes, **get_image_save_kwargs(format))
             bytes.seek(0)
             return bytes
     except Exception as e:
@@ -184,17 +199,17 @@ def bytes_to_base64(bytes):
         log.error(e)
     return None
 
-def resize_image(image, size=None, force=True):
+def resize_image(image, size=None, force=True, resample=Image.LANCZOS):
     if image and size:
         if force:
-            new_image = image.resize(size)
+            new_image = image.resize(size, resample)
             new_image.format = image.format
             image = new_image
         else:
-            image.thumbnail(size)
+            image.thumbnail(size, resample)
     return image
 
-def normalize_image(image_path, resize, b64_string=True, force_size=True):
+def normalize_image(image_path, resize, b64_string=True, force_size=True, format=None):
     # if b64_string then return result as a base64 string
     # otherwise return local filename where saved
     parsed_uri = urlparse(image_path)
@@ -216,10 +231,12 @@ def normalize_image(image_path, resize, b64_string=True, force_size=True):
     #
     # build the new image information and transform the origional image
     new_image_name = hashlib.md5(image_path.encode('utf-8')).hexdigest()
-    new_image_type = origional_image.format if origional_image else 'error'
+    new_image_type = format if format else origional_image.format if origional_image else 'error'
     new_filename = f'{new_image_name}.{new_image_type.lower()}'
     new_image = resize_image(image=origional_image, size=resize, force=force_size)
-    new_image_bytes = get_bytes_from_image(new_image)
+    if new_image.mode != 'RGB':
+        new_image = new_image.convert('RGB')
+    new_image_bytes = get_bytes_from_image(new_image, new_image_type)
     # new_image_bytes is a _io.BufferedReader
     #
     # the return value is either the encoded image data or the image filename
@@ -244,9 +261,10 @@ def process_row(row, options, writer):
         if options.image_src_col in row:
             image_str = normalize_image(
                 row[options.image_src_col],
-                resize = options.resize,
-                b64_string = options.image_output_type == 'base64',
-                force_size = not options.keep_aspect
+                resize=options.resize,
+                b64_string=options.image_output_type == 'base64',
+                force_size=not options.keep_aspect,
+                format=options.image_format
             )
         else:
             log.error(f'error: {options.image_src_col} not in columns')
@@ -343,14 +361,14 @@ def parse_args():
             input           : string, required
                               input csv file, using delim = ',' and quote = '"',
                               data should be UTF-8 or printable ASCII to be safe
-                              records line delimitered with multiline text support when using quoted strings
+                              records line delimited with multiline text support when using quoted strings
             output          : string, required
                               iff the output extension is '.csv' then the image data is encoded as base64 and
                               written to the csv file into the image-dst-col.
                               in all other situations the output will be treated as a directory and images
                               will be saved into this folder and the resulting data csv will be named master.csv
                               in both cases the resulting output csv file will be written using
-                              record delimitered = newline,  field delim = ',' and with the quote = '"'
+                              record delimited = newline,  field delim = ',' and with the quote = '"'
             image_src_col   : string, required
                               column name containing either the url/path/base64 image information to use
 
@@ -386,6 +404,12 @@ def parse_args():
     parser.add_argument(
         '--image_dst_col',
         help='column to source image information from'
+    )
+    parser.add_argument(
+        '--image_format',
+        help=('optional: Format image will be converted to after preprocessing, eg JPEG, PNG'
+              'By default original image format will be preserved.'),
+        default=None
     )
     parser.add_argument(
         '--resize',
