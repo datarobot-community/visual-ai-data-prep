@@ -54,7 +54,7 @@ from multiprocessing.dummy import Pool as ThreadPool
 
 
 # global variables
-VERSION = 'Version 2.2 2022-04-26'
+VERSION = 'Version 2.3 2022-08-18'
 IMAGENET = 224
 SCALE = 1
 RESIZE=(int(IMAGENET*SCALE),int(IMAGENET*SCALE))
@@ -75,6 +75,9 @@ log.info(VERSION)
 # boto3 client creation is not thread safe so need to create a lock to manage it
 boto3_client_lock = Lock()
 pwd = os.getcwd()
+
+# add lock for the csv writer
+csv_writer_lock = Lock()
 
 def get_s3_bytes(parsed_uri):
     log.debug('get_s3_bytes')
@@ -122,13 +125,6 @@ def get_localfile_bytes(parsed_uri):
         log.error(e)
         buffer = None
     return buffer
-
-def base64_to_bytes(data):
-    try:
-        return BytesIO(base64.b64decode(data))
-    except Exception as e:
-        log.error(e)
-        return None
 
 def get_some_bytes(parsed_uri):
     if len(parsed_uri.geturl()) > 1024:
@@ -254,7 +250,7 @@ def normalize_image(image_path, resize, b64_string=True, force_size=True, format
         return new_filename
 #
 # create out record processor so that we can use multithreading
-def process_row(row, options, writer):
+def process_row(row, options, writer, writer_lock):
     log.debug(f'row : {json.dumps(row)}')
     image_str = ''
     try:
@@ -273,33 +269,8 @@ def process_row(row, options, writer):
         log.exception(e)
     finally:
         row[options.image_dst_col] = image_str
-        writer.writerow(row)
-#
-# to be safe with out parallel output file writes to the csv we're using
-# a queue. queues are thread safe but and ordinaty file is not for write
-class safewriter:
-    def __init__(self, *args):
-        self.filewriter = open(*args)
-        self.queue = Queue()
-        self.finished = False
-        Thread(name = "safewriter", target=self.internal_writer).start()
-
-    def write(self, data):
-        self.queue.put(data)
-
-    def internal_writer(self):
-        while not self.finished:
-            try:
-                data = self.queue.get(True, 1)
-            except Empty:
-                continue
-            self.filewriter.write(data)
-            self.queue.task_done()
-
-    def close(self):
-        self.queue.join()
-        self.finished = True
-        self.filewriter.close()
+        with writer_lock:
+            writer.writerow(row)
 
 def zip_result(zip_this):
     log.info(f'post processing, zipping {zip_this}')
@@ -525,11 +496,10 @@ def main():
     #
     # now lets process the images
     pool = ThreadPool(options.threads)
-    results = pool.map(lambda r: process_row(r, options, writer), reader)
+    results = pool.map(lambda r: process_row(r, options, writer, csv_writer_lock), reader)
     pool.close()
     pool.join()
     #
-    # critical for consistant output that we close the output safewriter
     fd_out.close()
     fd_in.close()
     #
