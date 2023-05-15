@@ -1,33 +1,7 @@
 **Please note:** The code in these repos is sourced from the DataRobot user community and is not owned or maintained by DataRobot, Inc. You may need to make edits or updates for this code to function properly in your environment.
 
-# Visual AI Data Preparation
-
-Some tools to simplify and automate preparing datasets for Visual AI.
-
-Main functions are:
-- Convert folder of images to base64 csv (useful for predictions)
-- Downscale images to the size used by DataRobot (useful for large datasets)
-- Download images by URLs
-
-You can find more details and examples in [this community post](https://community.datarobot.com/t5/resources/getting-predictions-for-visual-ai-projects-via-api-calls/ta-p/10864)
-
-## Usage
-
-Basic usage is:
-
-    python visualai_data_prep.py <input.csv> <output.csv> <image_col>
-
-For more details, refer to `visualai_data_prep.py`.
-
-
-## Setup/Installation
-
-    pip install Pillow
-    pip install boto3
-
-## Development and Contributing
-
-If you'd like to report an issue or bug, suggest improvements, or contribute code to this project, please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
+# Deprecation Note
+We will soon delete this repository. The DataRobot public API client now has very similar functionality and replaces this repository. You can find the documentation of the client [here](https://datarobot-public-api-client.readthedocs-hosted.com/en/latest-release/reference/modeling/spec/binary_data.html#processing-images).
 
 
 # Code of Conduct
